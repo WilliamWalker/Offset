@@ -159,85 +159,101 @@ class Offset(object):
         outFC = parameters[1].valueAsText
         offset_dist = parameters[2].valueAsText
 
-        ### convert offset_dist to float
-        offset_dist = float(offset_dist)
-
-        ### Print progress
-        spat = arcpy.Describe(inFC).spatialReference
-        units = spat.linearUnitName
-        arcpy.AddMessage("Offsetting %s %s..." % (offset_dist, units))
-
-        ### Enable overwrite permission
-        arcpy.env.overwriteOutput = True
-
-        ### Create output shapefile by copying input shapefile
-        arcpy.Copy_management(inFC, outFC)
-
-        ### Create empty Array objects
-        parts = arcpy.Array()
-        rings = arcpy.Array()
-        ring = arcpy.Array()
-
-        ### Create cursor and update vertex coordinates
-        cursor = arcpy.UpdateCursor(outFC)
-        shapefield = arcpy.Describe(outFC).shapeFieldName
-
-        ### Loop through features of inFC
-        for row in cursor:
-            newPartList = []
-            # loop trough parts of feature
-            for part in row.getValue(shapefield):
-                coordList = []
-                counter = 0
-                # loop through points in part
-                for pnt in part:
-                    if counter == 0: #skip first point
-                        counter += 1
-                    else:
-                        if pnt:
-                            coordList.append((pnt.X, pnt.Y))
-                            counter += 1
-                        else: #null point, denotes beginning of inner ring
-                            counter = 0 #reset counter
-                            offsetList = offsetpolygon(coordList, offset_dist) #calculate offset points
-                            newPartList.append(offsetList) #add coordinates to new list
-                            coordList = [] #empty list
-
-                ### Add final (or only) offset coordinates for part
-                offsetList = offsetpolygon(coordList, offset_dist)
-                newPartList.append(offsetList)
-                       
-            ### loop through newPartList, to create new polygon geometry object for row
-            for part in newPartList:
-                for pnt in part:
-                    if pnt:
-                        ring.add(arcpy.Point(pnt[0], pnt[1]))
-                    else: #null point
-                        rings.add(ring)
-                        ring.removeAll()
-                        
-                ### if last ring, add it
-                rings.add(ring)
-                ring.removeAll()
-
-                ### if only one ring, remove nesting
-                if len(rings) == 1:
-                    rings = rings.getObject(0)
-
-                parts.add(rings)
-                rings.removeAll()
-                
-            ### if single-part, remove nesting
-            if len(parts) == 1:
-                parts = parts.getObject(0)
-
-            ### create polygon object based on parts array
-            polygon = arcpy.Polygon(parts)
-            parts.removeAll()
+        ### check geometry type (Polygon or Polyline)
+        desc = arcpy.Describe(inFC)
+        geomType = desc.shapeType
+        if geomType == 'Polygon':
             
-            ### replace geometry with new polygon object
-            row.setValue(shapefield, polygon)
+            ### convert offset_dist to float
+            offset_dist = float(offset_dist)
+    
+            ### Print progress
+            spat = arcpy.Describe(inFC).spatialReference
+            units = spat.linearUnitName
+            arcpy.AddMessage("Offsetting %s %s..." % (offset_dist, units))
+    
+            ### Enable overwrite permission
+            arcpy.env.overwriteOutput = True
+    
+            ### Create output shapefile by copying input shapefile
+            arcpy.Copy_management(inFC, outFC)
+    
+            ### Create empty Array objects
+            parts = arcpy.Array()
+            rings = arcpy.Array()
+            ring = arcpy.Array()
+    
+            ### Create cursor and update vertex coordinates
+            cursor = arcpy.UpdateCursor(outFC)
+            shapefield = arcpy.Describe(outFC).shapeFieldName
+    
+            ### Loop through features of inFC
+            for row in cursor:
+                newPartList = []
+                # loop trough parts of feature
+                for part in row.getValue(shapefield):
+                    coordList = []
+                    counter = 0
+                    # loop through points in part
+                    for pnt in part:
+                        if counter == 0: #skip first point
+                            counter += 1
+                        else:
+                            if pnt:
+                                coordList.append((pnt.X, pnt.Y))
+                                counter += 1
+                            else: #null point, denotes beginning of inner ring
+                                counter = 0 #reset counter
+                                offsetList = offsetpolygon(coordList, offset_dist) #calculate offset points
+                                newPartList.append(offsetList) #add coordinates to new list
+                                coordList = [] #empty list
+    
+                    ### Add final (or only) offset coordinates for part
+                    offsetList = offsetpolygon(coordList, offset_dist)
+                    newPartList.append(offsetList)
+                           
+                ### loop through newPartList, to create new polygon geometry object for row
+                for part in newPartList:
+                    for pnt in part:
+                        if pnt:
+                            ring.add(arcpy.Point(pnt[0], pnt[1]))
+                        else: #null point
+                            rings.add(ring)
+                            ring.removeAll()
+                            
+                    ### if last ring, add it
+                    rings.add(ring)
+                    ring.removeAll()
+    
+                    ### if only one ring, remove nesting
+                    if len(rings) == 1:
+                        rings = rings.getObject(0)
+    
+                    parts.add(rings)
+                    rings.removeAll()
+                    
+                ### if single-part, remove nesting
+                if len(parts) == 1:
+                    parts = parts.getObject(0)
+    
+                ### create polygon object based on parts array
+                polygon = arcpy.Polygon(parts)
+                parts.removeAll()
+                
+                ### replace geometry with new polygon object
+                row.setValue(shapefield, polygon)
+    
+                ### update cursor
+                cursor.updateRow(row)
+                
+        elif geomType == 'Polyline':
+            ### print progress
+            units = desc.spatialReference.linearUnitName
+            arcpy.AddMessage("Offsetting %s %s..." % (offset_dist, units))
 
-            ### update cursor
-            cursor.updateRow(row)
+            ### enable overwrite permission
+            arcpy.env.overwriteOutput = True
+
+            ###TODO: update code to offset polylines
+            
         return
