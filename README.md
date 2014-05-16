@@ -16,7 +16,7 @@ The Offset Tool is intended to be used as an extension to the existing Buffer to
 
 ## Requirements
 
-* ArcGIS Desktop 10.0 or higher
+* ArcGIS Desktop 10.1 or higher
 
 ## Issues
 
