@@ -7,7 +7,7 @@
 # Description:
 # Contains offset tool
 ####################################################################################################
-# Thank you Carl Trachte @ http://pyright.blogspot.com/2011/02/simple-polygon-offset.html
+# Thank you Carl Trachte @ http://pyright.blogspot.com
 # for the linear algebra refresher.
 #
 # Thank you Curtis Price @ USGS
