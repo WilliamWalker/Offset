@@ -121,7 +121,7 @@ class Offset(object):
             displayName = "Output features",
             name = "outFC",
             datatype = "GPFeatureLayer",
-            parameterType = "Required",
+            parameterType = "Derived",
             direction = "Output")
 
         # Third parameter
@@ -176,7 +176,7 @@ class Offset(object):
             arcpy.env.overwriteOutput = True
     
             ### Create output shapefile by copying input shapefile
-            arcpy.Copy_management(inFC, outFC)
+            arcpy.CopyFeatures_management(inFC, outFC)
     
             ### Create empty Array objects
             parts = arcpy.Array()
